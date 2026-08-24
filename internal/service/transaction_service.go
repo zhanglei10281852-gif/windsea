@@ -22,11 +22,11 @@ func PublishCampaignWithAudit(ctx context.Context, db *sql.DB, campaignID string
 	if count != 1 {
 		return domain.ErrConflict
 	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO audit_events(id,farm_id,actor_id,object_type,object_id,action,result,request_id,metadata,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", event.ID, event.FarmID, event.ActorID, event.ObjectType, event.ObjectID, event.Action, event.Result, event.RequestID, event.Metadata, at.UTC().Format(time.RFC3339Nano)); err != nil {
+		return fmt.Errorf("persist audit: %w", err)
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit campaign: %w", err)
-	}
-	if _, err := db.ExecContext(ctx, "INSERT INTO audit_events(id,farm_id,actor_id,object_type,object_id,action,result,request_id,metadata,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", event.ID, event.FarmID, event.ActorID, event.ObjectType, event.ObjectID, event.Action, event.Result, event.RequestID, event.Metadata, at.UTC().Format(time.RFC3339Nano)); err != nil {
-		return fmt.Errorf("audit after campaign commit: %w", err)
 	}
 	return nil
 }
